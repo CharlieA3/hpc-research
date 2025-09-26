@@ -1,0 +1,66 @@
+services:
+  llama-cpp:
+    image: nvcr.io/nvidia/cuda:11.2.0-devel-ubuntu20.04
+    
+    # build:
+    #   context: ./llama.cpp
+    #   dockerfile: .devops/cuda.Dockerfile
+    #   args:
+    #     LLAMA_CUDA: 1
+    #     #UBUNTU_VERSION: 20.04
+    #     CUDA_VERSION: "11.2.2"
+    #     CUDa_DOCKER_ARCH: "default"
+        # cannot use jetpack images from nvidia registry here because it is for arm architecture and my laptop is x86
+        # BASE_CUDA_RUN_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 runtime
+        # BASE_CUDA_DEV_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 devel 
+    container_name: my-pc-llm-profiler
+    # ports:
+    #   - "8080:8080"
+    volumes:
+      # Mount the directory containing your GGUF models
+      - ./models:/models
+      - ./install_llama_cpp.sh:/install_llama_cpp.sh
+    entrypoint: ["/bin/bash"]
+    tty: true
+    
+    # runtime: nvidia
+
+    #   NVIDIA_VISIBLE_DEVICES: all
+    #   NVIDIA_DRIVER_CAPABILITIES: compute,utility
+
+    # command: [
+    #   "--server",
+    #   "--host", "0.0.0.0",
+    #   "--port", "8080",
+    #   # this is based on the mounted models folders
+    #   "--model", "/models/llava-phi-3-mini-f16.gguf",
+    #   "--n-gpu-layers", "35",        # GPU layers (0 for CPU-only)
+    #   "--ctx-size", "4096",          # Context window size
+    #   "--threads", "8",               # Number of threads
+    #   "--n-predict", "512",          # Max tokens to generate
+    #   "--rope-freq-base", "10000",   # RoPE base frequency
+    #   "--rope-freq-scale", "1.0"     # RoPE frequency scaling
+    # ]
+
+    # using gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# volume for persistant file storage just in case, could use for big gguf files (right now I am mounting the volume)
+# volumes:
+#   model-cache:
+#     driver: local

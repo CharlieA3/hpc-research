@@ -1,0 +1,19 @@
+FROM ubuntu:20.04
+
+RUN echo "Installing and building llama.cpp"
+
+RUN sudo apt update -y
+RUN sudo apt upgrade -y
+
+# sudo apt install ca-certificates gpg wget curl -y
+RUN sudo apt-get install git-all cmake -y
+RUN sudo apt-get install software-properties-common -y
+
+RUN git clone https://github.com/ggml-org/llama.cpp
+WORKDIR llama.cpp
+
+# for cuda build of llama.cpp
+RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF
+RUN cmake --build build --config Release
+
+

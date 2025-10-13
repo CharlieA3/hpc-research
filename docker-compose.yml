@@ -25,22 +25,10 @@ services:
     
     # runtime: nvidia
 
+    environment:
+      # - PATH:
     #   NVIDIA_VISIBLE_DEVICES: all
     #   NVIDIA_DRIVER_CAPABILITIES: compute,utility
-
-    # command: [
-    #   "--server",
-    #   "--host", "0.0.0.0",
-    #   "--port", "8080",
-    #   # this is based on the mounted models folders
-    #   "--model", "/models/llava-phi-3-mini-f16.gguf",
-    #   "--n-gpu-layers", "35",        # GPU layers (0 for CPU-only)
-    #   "--ctx-size", "4096",          # Context window size
-    #   "--threads", "8",               # Number of threads
-    #   "--n-predict", "512",          # Max tokens to generate
-    #   "--rope-freq-base", "10000",   # RoPE base frequency
-    #   "--rope-freq-scale", "1.0"     # RoPE frequency scaling
-    # ]
 
     # using gpu
     deploy:

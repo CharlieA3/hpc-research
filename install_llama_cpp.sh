@@ -1,29 +1,30 @@
-#!bin/bash
+#!/bin/bash
 
-CMAKE_VERSION="3.18.3"
-CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+cat << 'EOF' > /etc/apt/sources.list
+deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal main restricted universe multiverse
+deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-updates main restricted universe multiverse
+deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-security main restricted universe multiverse
+deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-backports main restricted universe multiverse
+EOF
 
-echo "Installing and building llama.cpp"
+apt-get clean
+apt-get update
 
-apt update -y
-apt upgrade -y
+echo "deb https://repo.download.nvidia.com/jetson/common r35.4 main" > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
+echo "deb https://repo.download.nvidia.com/jetson/t234 r35.4 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
 
-apt-get install git-all -y
+apt-get install git build-essential cmake curl ca-certificates -y
 
-apt-get install software-properties-common -y
-# add-apt-repository ppa:kitware/ppa
-apt-get install ca-certificates gpg wget curl cmake -y
-apt-get upgrade cmake -y
+# To build llama.cpp, you need cmake 3.18
+apt-get install wget build-essential pkg-config libssl-dev git -y \
+       && wget https://github.com/Kitware/CMake/releases/download/v3.18.6/cmake-3.18.6.tar.gz \
+       && tar -zxvf cmake-3.18.6.tar.gz \
+       && cd cmake-3.18.6 \
+       && ./bootstrap && make -j$(nproc) && make install \
+       && cd .. && rm -rf cmake-3.18.6 cmake-3.18.6.tar.gz
 
-# wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-# echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list
-# apt-get update
 
 git clone https://github.com/ggml-org/llama.cpp
+
+
 cd llama.cpp
-
-# for cuda build of llama.cpp
-cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF
-cmake --build build --config Release
-
-#NOTE: might need to override the native gpu detection?

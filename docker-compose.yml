@@ -1,7 +1,8 @@
 services:
-  llama-cpp:
-    image: nvcr.io/nvidia/cuda:11.2.0-devel-ubuntu20.04
-    
+  llama-cpp-env:
+    platform: linux/arm64
+    image: nvcr.io/nvidia/l4t-jetpack:r35.4.1
+
     # build:
     #   context: ./llama.cpp
     #   dockerfile: .devops/cuda.Dockerfile
@@ -12,22 +13,16 @@ services:
     #     CUDa_DOCKER_ARCH: "default"
         # cannot use jetpack images from nvidia registry here because it is for arm architecture and my laptop is x86
         # BASE_CUDA_RUN_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 runtime
-        # BASE_CUDA_DEV_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 devel 
-    container_name: my-pc-llm-profiler
-    # ports:
-    #   - "8080:8080"
+        # BASE_CUDA_DEV_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 devel
+    container_name: cpp-profiler
     volumes:
-      # Mount the directory containing your GGUF models
-      - ./models:/models
-      - ./install_llama_cpp.sh:/install_llama_cpp.sh
+      # llama.cpp install
+      - ./install_llama_cpp.sh:/charlie/install_llama_cpp.sh
     entrypoint: ["/bin/bash"]
     tty: true
-    
-    # runtime: nvidia
 
-    environment:
-      # - PATH:
-    #   NVIDIA_VISIBLE_DEVICES: all
+    runtime: nvidia    
+
     #   NVIDIA_DRIVER_CAPABILITIES: compute,utility
 
     # using gpu

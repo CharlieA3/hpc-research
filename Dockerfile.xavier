@@ -1,0 +1,34 @@
+FROM ubuntu:20.04
+
+#ENV CMAKE_VERISON=3.18
+
+RUN echo "Installing and building llama.cpp"
+
+RUN apt-get update -y
+RUN apt-get upgrade -y
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+COPY install_llama_cpp.sh /runner/
+
+# To build llama.cpp, you need cmake 3.18
+RUN apt-get install wget build-essential pkg-config libssl-dev git -y \
+	&& wget https://github.com/Kitware/CMake/releases/download/v3.18.6/cmake-3.18.6.tar.gz \
+	&& tar -zxvf cmake-3.18.6.tar.gz \
+	&& cd cmake-3.18.6 \
+	&& ./bootstrap && make -j$(nproc) && make install \
+	&& cd .. && rm -rf cmake-3.18.6 cmake-3.18.6.tar.gz
+
+WORKDIR /workspace
+
+#RUN git clone https://github.com/ggml-org/llama.cpp
+
+#ENV DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.4/bin/nvcc
+
+# for cuda build of llama.cpp
+#WORKDIR /workspace/llama.cpp
+#RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.4/bin/nvcc
+#RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF
+#RUN cmake --build build --config Release
+
+

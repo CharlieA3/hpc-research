@@ -1,11 +1,12 @@
 services:
   llama-cpp-env:
-    platform: linux/arm64
-    image: nvcr.io/nvidia/l4t-jetpack:r35.4.1
+    # platform in this image is automatically arm because jetpack is meant for arm? or this is meant for xavier?
+    #platform: linux/arm64
+    #image: nvcr.io/nvidia/l4t-jetpack:r35.4.1
 
-    # build:
-    #   context: ./llama.cpp
-    #   dockerfile: .devops/cuda.Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile.xavier
     #   args:
     #     LLAMA_CUDA: 1
     #     #UBUNTU_VERSION: 20.04
@@ -24,6 +25,7 @@ services:
     runtime: nvidia    
 
     #   NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    env_file: "llama.env"
 
     # using gpu
     deploy:

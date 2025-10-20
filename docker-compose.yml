@@ -1,30 +1,19 @@
 services:
   llama-cpp-env:
-    # platform in this image is automatically arm because jetpack is meant for arm? or this is meant for xavier?
-    #platform: linux/arm64
-    #image: nvcr.io/nvidia/l4t-jetpack:r35.4.1
-
     build:
       context: .
       dockerfile: Dockerfile.xavier
-    #   args:
-    #     LLAMA_CUDA: 1
-    #     #UBUNTU_VERSION: 20.04
-    #     CUDA_VERSION: "11.2.2"
-    #     CUDa_DOCKER_ARCH: "default"
-        # cannot use jetpack images from nvidia registry here because it is for arm architecture and my laptop is x86
-        # BASE_CUDA_RUN_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 runtime
-        # BASE_CUDA_DEV_CONTAINER: "nvcr.io/nvidia/l4t-base:r35.2.1"  # JetPack 5.2 devel
     container_name: cpp-profiler
+    privileged: true
     volumes:
-      # llama.cpp install
-      - ./install_llama_cpp.sh:/charlie/install_llama_cpp.sh
+      - ./app:/charlie/profile-app
+      - /usr/bin:/usr/bin
+      - /proc:/proc
+      - /sys:/sys
     entrypoint: ["/bin/bash"]
     tty: true
 
     runtime: nvidia    
-
-    #   NVIDIA_DRIVER_CAPABILITIES: compute,utility
     env_file: "llama.env"
 
     # using gpu
@@ -33,8 +22,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+              count: all
+              capabilities: [gpu, compute, utility]
 
     restart: unless-stopped
 
@@ -45,7 +34,3 @@ services:
       retries: 3
       start_period: 40s
 
-# volume for persistant file storage just in case, could use for big gguf files (right now I am mounting the volume)
-# volumes:
-#   model-cache:
-#     driver: local

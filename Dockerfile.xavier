@@ -6,7 +6,6 @@ RUN echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal main restr
     echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
     echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-security main restricted universe multiverse" >> /etc/apt/sources.list && \
     echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-backports main restricted universe multiverse" >> /etc/apt/sources.list
-
 RUN apt-get clean
 RUN apt-get update -y
 
@@ -27,56 +26,25 @@ RUN git clone https://github.com/ggml-org/llama.cpp
 
 RUN apt-get install -y ccache
 
-WORKDIR /charlie/llama.cpp
+# copy this for purpose of creating a symlink
+WORKDIR /usr/local/cuda-11.4/targets/aarch64-linux/lib/stubs
 
-# Debug: Find where libcuda actually is and save to file
-RUN echo "=== Searching for libcuda ===" > /tmp/cuda-debug.txt && \
-    find /usr -name "libcuda.so*" 2>/dev/null >> /tmp/cuda-debug.txt || echo "Not found with find" >> /tmp/cuda-debug.txt && \
-    ldconfig -p | grep libcuda >> /tmp/cuda-debug.txt || echo "Not in ldconfig cache" >> /tmp/cuda-debug.txt && \
-    ls -la /usr/lib/aarch64-linux-gnu/ | grep cuda >> /tmp/cuda-debug.txt || echo "Not in aarch64-linux-gnu" >> /tmp/cuda-debug.txt && \
-    ls -la /usr/local/cuda/lib64/ 2>/dev/null | grep cuda >> /tmp/cuda-debug.txt || echo "Not in cuda/lib64" >> /tmp/cuda-debug.txt && \
-    ls -la /usr/local/cuda/targets/aarch64-linux/lib/ 2>/dev/null | grep libcuda >> /tmp/cuda-debug.txt || echo "Not in targets" >> /tmp/cuda-debug.txt && \
-    cat /tmp/cuda-debug.txt
+# should create a symlink to the libcuda.so.1 so it can be found during build time TODO: but it isn't working?
+RUN ln -sf libcuda.so libcuda.so.1
+
+ENV CUDA_HOME=/usr/local/cuda-11.4
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/targets/aarch64-linux/lib/stubs:/usr/local/cuda-11.4/targets/aarch64-linux/lib:/usr/local/cuda-11.4/lib64:/usr/lib/aarch64-linux-gnu
+
+WORKDIR /charlie/llama.cpp
 
 RUN cmake -B build -DGGML_CUDA=ON \
       		   -DLLAMA_CURL=OFF \
                    -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.4/bin/nvcc \
  		   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+		   -DCMAKE_CUDA_ARCHITECTURES=72 \
 		   # This tells the linker to look here during build time, which directly embeds these paths into the shared object files which means you don't need
 		   # to set LD_LIBRARY_PATH environment variable which is used during runtime
-		   -DCMAKE_SHARED_LINKER_FLAGS="-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
-    		   -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
+		   #-DCMAKE_SHARED_LINKER_FLAGS="-L/usr/local/cuda-11.4/targets/aarch64-linux/ -Wl,-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
+    		   #-DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda-11.4/targets/aarch64-linux/ -Wl,-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
     && cmake --build build --config Release -j$(nproc)
-
-#FROM ubuntu:20.04
-
-#ENV CMAKE_VERISON=3.18
-
-#RUN echo "Installing and building llama.cpp"
-
-#RUN apt-get update -y
-#RUN apt-get upgrade -y
-
-#ENV DEBIAN_FRONTEND=noninteractive
-
-# To build llama.cpp, you need cmake 3.18
-#RUN apt-get install wget build-essential pkg-config libssl-dev git -y \
-#       && wget https://github.com/Kitware/CMake/releases/download/v3.18.6/cmake-3.18.6.tar.gz \
-#       && tar -zxvf cmake-3.18.6.tar.gz \
-#       && cd cmake-3.18.6 \
-#       && ./bootstrap && make -j$(nproc) && make install \
-#       && cd .. && rm -rf cmake-3.18.6 cmake-3.18.6.tar.gz
-
-#WORKDIR /workspace
-
-#RUN git clone https://github.com/ggml-org/llama.cpp
-
-#ENV DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.4/bin/nvcc
-
-# for cuda build of llama.cpp
-#WORKDIR /workspace/llama.cpp
-#RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.4/bin/nvcc
-#RUN cmake -B build -DGGML_CUDA=ON -DLLAMA_CURL=OFF
-#RUN cmake --build build --config Release
-

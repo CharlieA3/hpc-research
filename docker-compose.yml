@@ -5,17 +5,28 @@ services:
       dockerfile: Dockerfile.xavier
     container_name: cpp-profiler
     privileged: true
+    shm_size: '8gb'
+    ulimits:
+      memlock: -1
+      stack: 67108864
     volumes:
       - ./app:/charlie/profile-app
-      - /usr/bin:/usr/bin
+      - ./models:/charlie/llama.cpp/models
+      - /usr/bin/tegrastats:/usr/bin/tegrastats
+      - /usr/local/cuda:/usr/local/cuda:ro
       - /proc:/proc
       - /sys:/sys
+      - /dev:/dev
     entrypoint: ["/bin/bash"]
     tty: true
 
     runtime: nvidia    
-    env_file: "llama.env"
+    # env_file: "llama.env"
 
+    environment:
+      - CUDA_HOME=/usr/local/cuda-11.4
+      - PATH=/usr/local/cuda-11.4/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - LD_LIBRARY_PATH=/usr/local/cuda-11.4/targets/aarch64-linux/lib:/usr/local/cuda-11.4/lib64:/usr/lib/aarch64-linux-gnu 
     # using gpu
     deploy:
       resources:

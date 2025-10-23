@@ -14,7 +14,7 @@ RUN echo "deb https://repo.download.nvidia.com/jetson/t234 r35.4 main" >> /etc/a
 
 RUN apt-get update -y
 
-RUN apt-get install -y build-essential cmake git zsh vim wget pkg-config libssl-dev
+RUN apt-get install -y build-essential cmake git zsh vim wget pkg-config libssl-dev python3 python3-venv python3-pip python3-dev
 
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.6/cmake-3.18.6.tar.gz \
     && tar -zxvf cmake-3.18.6.tar.gz \
@@ -43,8 +43,13 @@ RUN cmake -B build -DGGML_CUDA=ON \
  		   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
 		   -DCMAKE_CUDA_ARCHITECTURES=72 \
-		   # This tells the linker to look here during build time, which directly embeds these paths into the shared object files which means you don't need
-		   # to set LD_LIBRARY_PATH environment variable which is used during runtime
-		   #-DCMAKE_SHARED_LINKER_FLAGS="-L/usr/local/cuda-11.4/targets/aarch64-linux/ -Wl,-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
-    		   #-DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda-11.4/targets/aarch64-linux/ -Wl,-L/usr/lib/aarch64-linux-gnu -Wl,-rpath,/usr/local/cuda/lib64 -Wl,-rpath,/usr/lib/aarch64-linux-gnu" \
+		   -DGGML_CUDA_FA=OFF \
     && cmake --build build --config Release -j$(nproc)
+
+WORKDIR /charlie
+
+ENV TORCH_CUDA_ARCH_LIST="7.2"
+
+RUN python3 -m venv .venv
+COPY requirements.txt .
+RUN . .venv/bin/activate && pip install --upgrade pip setuptools wheel && pip install -r requirements.txt

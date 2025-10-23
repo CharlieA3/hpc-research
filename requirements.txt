@@ -1,0 +1,8 @@
+pip>=23.0
+numpy>=1.23
+torch          # note: see Jetson notes below if this fails
+transformers
+safetensors
+sentencepiece
+huggingface-hub
+protobuf

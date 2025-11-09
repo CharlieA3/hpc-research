@@ -1,4 +1,4 @@
-#include <llm_profiler.cpp>
+#include "llm_profiler.hpp"
 
 
 int main() {
